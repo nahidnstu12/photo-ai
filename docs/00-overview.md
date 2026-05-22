@@ -22,6 +22,7 @@ Merchants upload inconsistent product photos (messy backgrounds, low resolution,
 | [architecture.md](./architecture.md) | System design, data flow, Docker topology |
 | [agent-guidelines.md](./agent-guidelines.md) | How AI agents should work in this repo |
 | [glossary.md](./glossary.md) | Terms and quality levers |
+| [learning/](./learning/) | **Crash course** — FastAPI, rembg, ESRGAN, ComfyUI |
 | [phases/](./phases/) | One file per implementation phase |
 
 ## Original reference

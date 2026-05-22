@@ -12,6 +12,7 @@ Local **Docker-based** product photo enhancement pipeline — raw clothing photo
 
 | Doc | Description |
 |-----|-------------|
+| [docs/learning/README.md](docs/learning/README.md) | **Start here if new to the stack** |
 | [docs/00-plan.md](docs/00-plan.md) | Master plan & phase index |
 | [docs/00-overview.md](docs/00-overview.md) | Project overview |
 | [docs/architecture.md](docs/architecture.md) | System design |
