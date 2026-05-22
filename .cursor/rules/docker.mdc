@@ -1,0 +1,35 @@
+---
+description: Docker Compose conventions for photo-ai services
+globs: "{docker-compose*.yml,Dockerfile*,services/**/Dockerfile*,.env.example}"
+alwaysApply: false
+---
+
+# Services
+
+| Service | Role | Port |
+|---------|------|------|
+| `orchestrator` | FastAPI, pipeline runner, batch CLI | `8090` |
+| `comfyui` | Stable Diffusion img2img worker | `8188` |
+| `redis` | Job queue (phase 6+) | `6379` |
+
+rembg + Real-ESRGAN run **inside orchestrator** until split is justified (phase 6+).
+
+# Conventions
+
+- Multi-stage Dockerfiles; pin base images by digest when possible.
+- **Named volumes** for model caches: `comfyui_models`, `rembg_models`, `realesrgan_weights`.
+- Bind mounts for dev I/O: `./data/input`, `./data/output`, `./workflows`.
+- Every service: `healthcheck` + `depends_on` with `condition: service_healthy` where applicable.
+- Env vars in `.env`; never hardcode paths — use `DATA_DIR`, `COMFYUI_URL`, `WORKFLOW_PATH`.
+- Use `docker compose` (v2), not `docker-compose`.
+
+# GPU / Mac caveat
+
+- **Mac Docker:** no MPS in containers — CPU fallback or hybrid dev (native ComfyUI + dockerized orchestrator). Document in phase 1.
+- **Linux + NVIDIA:** use `docker-compose.gpu.yml` override with `deploy.resources.reservations.devices`.
+
+# Agent rules
+
+- Do not bake multi-GB checkpoints into images — download on first run or mount volumes.
+- Keep ComfyUI image separate from orchestrator (different deps, restart cycles).
+- Test with: `docker compose up -d && docker compose ps && curl localhost:8090/health`

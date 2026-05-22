@@ -1,0 +1,48 @@
+# Environment
+.env
+.env.local
+
+# Data & models (large)
+data/input/*
+data/output/*
+data/stage1_nobg/*
+data/stage2_upscale/*
+data/stage3_sd/*
+data/models/**/*
+!data/**/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ComfyUI outputs
+services/comfyui/output/
+
+# Logs
+*.log
+
+# Checkpoints (never commit)
+*.safetensors
+*.pth
+*.ckpt
+*.pt
+*.onnx
+
+# Temp
+tmp/
+*.tmp

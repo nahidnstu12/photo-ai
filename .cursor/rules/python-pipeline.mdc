@@ -1,0 +1,57 @@
+---
+description: Python orchestrator and pipeline code standards
+globs: "services/orchestrator/**/*.py"
+alwaysApply: false
+---
+
+# Structure
+
+```
+services/orchestrator/
+├── app/
+│   ├── main.py           # FastAPI app
+│   ├── config.py         # pydantic-settings from env
+│   ├── pipeline/         # stage modules (one file per stage)
+│   │   ├── remove_bg.py
+│   │   ├── composite.py
+│   │   ├── upscale.py
+│   │   └── polish.py     # ComfyUI client
+│   └── models/           # request/response schemas
+├── tests/
+└── pyproject.toml
+```
+
+# Stage module contract
+
+Each stage exposes:
+
+```python
+def run(input_path: Path, output_path: Path, *, options: StageOptions) -> StageResult:
+    """Raises StageError on failure; writes exactly one output file."""
+```
+
+- Stages are **pure filesystem in/out** — easy to test and replay from `data/stage*/`.
+- Pipeline runner writes intermediate artifacts to configured stage dirs (audit trail).
+
+# ComfyUI client
+
+- Load workflow from `workflows/*.json` (exported API format, not UI format).
+- Submit to `{COMFYUI_URL}/prompt`, poll `/history/{prompt_id}`, save output.
+- Parameterize: denoise, seed, positive/negative prompts via config — not hardcoded in Python.
+
+# Quality defaults (catalog mode)
+
+| Param | Value |
+|-------|-------|
+| rembg model | `u2net_cloth_seg` |
+| upscale scale | `2` |
+| denoise | `0.30` |
+| CFG | `7` |
+| steps | `20` |
+
+# Agent rules
+
+- Python **3.11** only (3.12 breaks deps).
+- Type hints + pydantic v2 for config/schemas.
+- No subprocess shells with unvalidated paths — use `Path` and explicit args.
+- Log stage name, duration, input/output paths (not image bytes).

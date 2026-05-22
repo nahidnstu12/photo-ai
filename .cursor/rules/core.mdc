@@ -1,0 +1,30 @@
+---
+description: photo-ai project layout, stack, and agent behavior
+alwaysApply: true
+---
+
+# Project
+
+- **Goal:** Local Docker-based pipeline — raw clothing product photo → catalog-ready image (no cloud APIs).
+- **Stack:** Python 3.11 orchestrator (FastAPI) · rembg · Real-ESRGAN · ComfyUI (SD img2img) · Docker Compose.
+- **Source spec:** `photo_enhancement_guide.docx` + `docs/` (authoritative over the docx if they diverge).
+- **Layout:** `services/orchestrator/` (API + pipeline), `services/comfyui/` (image + workflows mount), `workflows/` (ComfyUI API JSON), `data/` (models + I/O, gitignored).
+
+# Pipeline stages (order)
+
+1. Background removal (rembg, `u2net_cloth_seg` for clothing)
+2. White/grey canvas composite (PIL)
+3. Upscale 2x (Real-ESRGAN x4plus — **not** 4x for fabric)
+4. SD img2img polish via ComfyUI API (denoise **0.25–0.35** only for catalog)
+5. Export JPG at target resolution
+
+# Agent behavior
+
+- **Read before coding:** `docs/00-plan.md` + the current phase file under `docs/phases/`.
+- **One phase at a time** — do not implement later phases early (no ComfyUI in phase 2, etc.).
+- **Incremental pipeline:** rembg alone must work before ESRGAN; ESRGAN before SD polish.
+- **Small diffs** — match existing patterns; no drive-by refactors.
+- **No secrets in git** — use `.env` (see `.env.example`).
+- **Preserve garment fidelity** — default denoise ≤ 0.35; never enable beautifier/expand unless explicitly scoped.
+- **Do not commit** model weights, `data/input|output|models`, or generated images.
+- When a phase is done, update its checklist in the phase doc — do not add unrelated markdown.

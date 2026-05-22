@@ -1,0 +1,61 @@
+# photo-ai — Docker Compose (Phase 1 foundation)
+# Services added incrementally per docs/phases/
+
+services:
+  orchestrator:
+    build:
+      context: ./services/orchestrator
+      dockerfile: Dockerfile
+    ports:
+      - "${ORCHESTRATOR_PORT:-8090}:8090"
+    env_file:
+      - .env
+    environment:
+      DATA_DIR: /data
+      COMFYUI_URL: ${COMFYUI_URL:-http://comfyui:8188}
+      WORKFLOW_POLISH_PATH: ${WORKFLOW_POLISH_PATH:-/workflows/polish_catalog.json}
+    volumes:
+      - ./data:/data
+      - ./workflows:/workflows:ro
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8090/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  # Phase 4 — uncomment when ComfyUI Dockerfile is ready
+  # comfyui:
+  #   build:
+  #     context: ./services/comfyui
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "${COMFYUI_PORT:-8188}:8188"
+  #   volumes:
+  #     - comfyui_models:/comfyui/models
+  #     - ./workflows:/workflows:ro
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-sf", "http://localhost:8188/system_stats"]
+  #     interval: 15s
+  #     timeout: 10s
+  #     retries: 10
+  #     start_period: 120s
+  #   restart: unless-stopped
+
+  # Phase 6 — uncomment when batch queue is implemented
+  # redis:
+  #   image: redis:7-alpine
+  #   ports:
+  #     - "6379:6379"
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 5
+  #   restart: unless-stopped
+
+volumes:
+  comfyui_models:
+  rembg_models:
+  realesrgan_weights:
