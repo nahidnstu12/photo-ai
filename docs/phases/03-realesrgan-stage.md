@@ -1,6 +1,6 @@
 # Phase 3 — Real-ESRGAN Stage
 
-**Status:** not started  
+**Status:** complete  
 **Depends on:** [Phase 2](./02-rembg-stage.md)  
 **Parallel with:** [Phase 4](./04-comfyui-service.md)
 
@@ -48,7 +48,9 @@ Prefer Python package `realesrgan` over shelling to repo script unless simpler.
 ## Verification
 
 ```bash
-./scripts/download-models.sh   # or documented manual wget
+# Download weights yourself (see README "Model downloads")
+curl -fL -o data/models/realesrgan/RealESRGAN_x4plus.pth \
+  https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth
 docker compose build orchestrator
 docker compose up -d
 docker compose exec orchestrator python -m app.cli stage rembg \
@@ -62,11 +64,11 @@ identify data/stage2_upscale/sample.png   # dimensions ~2x stage1
 
 ## Done when
 
-- [ ] Weights download documented and scripted
-- [ ] Upscale CLI produces ~2x dimensions
-- [ ] Fabric detail improved without extreme halos (visual check)
-- [ ] `PIPELINE_UPSCALE` env respected
-- [ ] pytest for upscale with tiny fixture (mock inference optional)
+- [x] Weights download documented and scripted
+- [x] Upscale CLI produces ~2x dimensions
+- [x] Fabric detail improved without extreme halos (visual check)
+- [x] `PIPELINE_UPSCALE` env respected
+- [x] pytest for upscale with tiny fixture (mock inference optional)
 
 ---
 

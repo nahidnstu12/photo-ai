@@ -1,6 +1,6 @@
 # Phase 2 — rembg Stage
 
-**Status:** not started  
+**Status:** complete  
 **Depends on:** [Phase 1](./01-docker-foundation.md)  
 **Parallel with:** [Phase 4](./04-comfyui-service.md) (after Phase 1)
 
@@ -67,11 +67,11 @@ Compare visually: subject intact, background white, no major garment clipping.
 
 ## Done when
 
-- [ ] CLI stage completes on sample clothing image
-- [ ] Output saved under `data/stage1_nobg/`
-- [ ] Model configurable via `REMBG_MODEL` env
-- [ ] Test passes in CI/local `pytest`
-- [ ] Stage completes in <10s on sample (CPU acceptable)
+- [x] CLI stage completes on sample clothing image
+- [x] Output saved under `data/stage1_nobg/`
+- [x] Model configurable via `REMBG_MODEL` env
+- [x] Test passes in CI/local `pytest`
+- [x] Stage completes in <10s on sample (CPU acceptable)
 
 ---
 

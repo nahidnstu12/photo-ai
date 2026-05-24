@@ -1,11 +1,16 @@
+import logging
+import tempfile
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
 
+from app.cli import _run_rembg_stage
 from app.config import get_settings
 
-PHASE = 1
+PHASE = 3
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -29,3 +34,27 @@ def health() -> dict[str, Any]:
         "data_dir": str(settings.data_dir),
         "data_dirs_ready": data_ok,
     }
+
+
+@app.post("/api/v1/stages/rembg")
+async def stage_rembg(file: UploadFile = File(...)) -> dict[str, str]:
+    settings = get_settings()
+    stem = Path(file.filename or "upload").stem
+    output_path = settings.stage1_nobg_dir / f"{stem}.png"
+
+    suffix = Path(file.filename or "upload.jpg").suffix or ".jpg"
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        tmp.write(await file.read())
+        input_path = Path(tmp.name)
+
+    try:
+        _run_rembg_stage(
+            input_path,
+            output_path,
+            model=settings.rembg_model,
+            model_dir=settings.rembg_model_dir,
+        )
+    finally:
+        input_path.unlink(missing_ok=True)
+
+    return {"output_path": str(output_path)}

@@ -75,6 +75,14 @@ class Settings(BaseSettings):
     def models_dir(self) -> Path:
         return self.data_dir / "models"
 
+    @property
+    def rembg_model_dir(self) -> Path:
+        return self.models_dir / "rembg"
+
+    @property
+    def realesrgan_weights_path(self) -> Path:
+        return self.models_dir / "realesrgan" / "RealESRGAN_x4plus.pth"
+
     def data_subdirs(self) -> tuple[Path, ...]:
         return (
             self.input_dir,
@@ -88,6 +96,7 @@ class Settings(BaseSettings):
     def ensure_data_dirs(self) -> None:
         for path in self.data_subdirs():
             path.mkdir(parents=True, exist_ok=True)
+        self.rembg_model_dir.mkdir(parents=True, exist_ok=True)
 
 
 @lru_cache

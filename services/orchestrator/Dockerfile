@@ -8,13 +8,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y --no-install-recommends curl libgomp1 libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./
 COPY app ./app
 
 RUN pip install --upgrade pip \
+    && pip install "numpy>=1.24,<2" \
+    && pip install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu \
     && pip install .
 
 EXPOSE 8090

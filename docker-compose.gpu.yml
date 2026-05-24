@@ -12,13 +12,4 @@ services:
               capabilities: [gpu]
     environment:
       NVIDIA_VISIBLE_DEVICES: all
-
-  # Optional: GPU for upscale in orchestrator (if implemented)
-  # orchestrator:
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: 1
-  #             capabilities: [gpu]
+      COMFYUI_EXTRA_ARGS: "--force-fp16"

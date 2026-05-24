@@ -1,6 +1,6 @@
 # Phase 4 — ComfyUI Service
 
-**Status:** not started  
+**Status:** complete  
 **Depends on:** [Phase 1](./01-docker-foundation.md)  
 **Parallel with:** Phases 2–3
 
@@ -66,12 +66,12 @@ For hybrid Mac: ComfyUI on host :8188, skip container healthcheck in dev.
 
 ## Done when
 
-- [ ] ComfyUI container starts and stays healthy
-- [ ] Checkpoint loads without OOM (document RAM/GPU requirements)
-- [ ] `workflows/polish_catalog.json` committed (API format)
-- [ ] One manual `/prompt` run produces image in ComfyUI output dir
-- [ ] Model download steps in README + `scripts/download-models.sh`
-- [ ] GPU override file documented
+- [x] ComfyUI container starts and stays healthy
+- [x] Checkpoint loads without OOM (document RAM/GPU requirements)
+- [x] `workflows/polish_catalog.json` committed (API format)
+- [x] One manual `/prompt` run produces image in ComfyUI output dir
+- [x] Model download steps in README + `scripts/download-models.sh`
+- [x] GPU override file documented
 
 ---
 

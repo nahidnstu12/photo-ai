@@ -10,6 +10,10 @@ data/stage2_upscale/*
 data/stage3_sd/*
 data/models/**/*
 !data/**/.gitkeep
+data/models/comfyui/output/*
+data/models/comfyui/input/*
+!data/models/comfyui/input/.gitkeep
+!data/models/comfyui/output/.gitkeep
 
 # Python
 __pycache__/

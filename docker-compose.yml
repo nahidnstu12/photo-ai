@@ -1,5 +1,4 @@
-# photo-ai — Docker Compose (Phase 1 foundation)
-# Services added incrementally per docs/phases/
+# photo-ai — Docker Compose
 
 services:
   orchestrator:
@@ -12,6 +11,8 @@ services:
       - .env
     environment:
       DATA_DIR: /data
+      REMBG_MODEL: ${REMBG_MODEL:-u2net_cloth_seg}
+      PIPELINE_UPSCALE: ${PIPELINE_UPSCALE:-2}
       COMFYUI_URL: ${COMFYUI_URL:-http://comfyui:8188}
       WORKFLOW_POLISH_PATH: ${WORKFLOW_POLISH_PATH:-/workflows/polish_catalog.json}
     volumes:
@@ -25,23 +26,28 @@ services:
       start_period: 15s
     restart: unless-stopped
 
-  # Phase 4 — uncomment when ComfyUI Dockerfile is ready
-  # comfyui:
-  #   build:
-  #     context: ./services/comfyui
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "${COMFYUI_PORT:-8188}:8188"
-  #   volumes:
-  #     - comfyui_models:/comfyui/models
-  #     - ./workflows:/workflows:ro
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-sf", "http://localhost:8188/system_stats"]
-  #     interval: 15s
-  #     timeout: 10s
-  #     retries: 10
-  #     start_period: 120s
-  #   restart: unless-stopped
+  comfyui:
+    build:
+      context: ./services/comfyui
+      dockerfile: Dockerfile
+    ports:
+      - "${COMFYUI_PORT:-8188}:8188"
+    env_file:
+      - .env
+    environment:
+      COMFYUI_EXTRA_ARGS: ${COMFYUI_EXTRA_ARGS:---cpu}
+    volumes:
+      - ./data/models/comfyui/checkpoints:/opt/ComfyUI/models/checkpoints
+      - ./data/models/comfyui/input:/opt/ComfyUI/input
+      - ./data/models/comfyui/output:/opt/ComfyUI/output
+      - ./workflows:/workflows:ro
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8188/system_stats"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    restart: unless-stopped
 
   # Phase 6 — uncomment when batch queue is implemented
   # redis:
