@@ -8,7 +8,7 @@ Local **Docker-based** product photo enhancement pipeline — raw clothing photo
 
 ## Status
 
-**Planning complete — implementation starts at Phase 1.**
+**Phase 1 complete** — orchestrator health API + data layout. Pipeline stages start at Phase 2.
 
 | Doc | Description |
 |-----|-------------|
@@ -46,10 +46,15 @@ input → rembg → white composite → Real-ESRGAN 2x → SD polish (optional) 
 
 ```bash
 cp .env.example .env
-docker compose build
+docker compose build orchestrator
 docker compose up -d
-curl http://localhost:8090/health
+curl -sf http://localhost:8090/health | jq .
+# → {"status":"ok","phase":1,"data_dir":"/data","data_dirs_ready":true}
 ```
+
+On startup the orchestrator ensures `data/input`, `output`, `stage1_nobg`, `stage2_upscale`, `stage3_sd`, and `models` exist under the bind-mounted `./data`.
+
+**Mac M4:** Docker has no MPS. Use [hybrid dev](docs/architecture.md#mode-b--hybrid-mac-dev-recommended-for-m4) after Phase 4 — native ComfyUI on host, orchestrator in Docker with `COMFYUI_URL=http://host.docker.internal:8188`.
 
 Full pipeline available after **Phase 5**.
 

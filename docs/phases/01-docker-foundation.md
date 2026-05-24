@@ -1,6 +1,6 @@
 # Phase 1 — Docker Foundation
 
-**Status:** not started  
+**Status:** complete  
 **Depends on:** —  
 **Parallel with:** —
 
@@ -68,11 +68,11 @@ docker compose logs orchestrator     # no crash loop
 
 ## Done when
 
-- [ ] `docker compose up -d` succeeds from clean clone (no models needed)
-- [ ] `/health` returns 200 JSON
-- [ ] `./data/input`, `output`, `stage1_nobg`, `stage2_upscale`, `stage3_sd`, `models` exist
-- [ ] `.env.example` documents all vars (even if unused until later phases)
-- [ ] README explains Docker vs hybrid Mac dev
+- [x] `docker compose up -d` succeeds from clean clone (no models needed)
+- [x] `/health` returns 200 JSON
+- [x] `./data/input`, `output`, `stage1_nobg`, `stage2_upscale`, `stage3_sd`, `models` exist
+- [x] `.env.example` documents all vars (even if unused until later phases)
+- [x] README explains Docker vs hybrid Mac dev
 
 ---
 
