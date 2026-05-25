@@ -14,10 +14,10 @@ ComfyUI runs in Docker (or documented native/hybrid setup), loads checkpoint, ex
 
 ## Scope IN
 
-- `services/comfyui/Dockerfile` + entrypoint (`--listen 0.0.0.0 --force-fp16`)
+- `services/comfyui/Dockerfile` + entrypoint (`--listen 0.0.0.0`; GPU: `--force-fp16` via override)
 - Add `comfyui` service to `docker-compose.yml` with healthcheck (`GET /system_stats` or `/`)
 - `workflows/polish_catalog.json` — minimal img2img API workflow (placeholder OK initially)
-- Document checkpoint download → volume `comfyui_models/checkpoints/realisticVision_v51.safetensors`
+- Document checkpoint download → `data/models/comfyui/checkpoints/realisticVision_v51.safetensors`
 - Manual verification: submit test workflow via curl to `/prompt`
 - `docker-compose.gpu.yml` stub for NVIDIA (commented example)
 
@@ -46,21 +46,32 @@ See [glossary.md](../glossary.md).
 
 ---
 
+### As implemented
+
+| Piece | Detail |
+|-------|--------|
+| Image | ComfyUI **v0.3.49** (`ARG COMFYUI_REF` in Dockerfile) |
+| CPU default | `COMFYUI_EXTRA_ARGS=--cpu` (Mac Docker) |
+| GPU Linux | `docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d` |
+| Workflow | `workflows/polish_catalog.json` (nodes 1–8, denoise 0.3) |
+| Test script | `scripts/comfyui-prompt-test.sh` |
+
+---
+
 ## Verification
 
 ```bash
-# After model download to volume
-docker compose up -d comfyui
+# After checkpoint download (see README)
+docker compose build comfyui && docker compose up -d comfyui
 docker compose ps                    # comfyui healthy
-curl -sf http://localhost:8188/system_stats | head
+curl -sf http://localhost:8188/system_stats | jq .
 
-# Manual prompt test (adjust workflow in curl body)
-curl -X POST http://localhost:8188/prompt \
-  -H "Content-Type: application/json" \
-  -d @workflows/test_prompt.json
+cp data/stage2_upscale/sample.png data/models/comfyui/input/input.png
+./scripts/comfyui-prompt-test.sh
+ls data/models/comfyui/output/
 ```
 
-For hybrid Mac: ComfyUI on host :8188, skip container healthcheck in dev.
+For hybrid Mac: run ComfyUI natively on :8188; set `COMFYUI_URL=http://host.docker.internal:8188` in orchestrator `.env` (phase 5).
 
 ---
 

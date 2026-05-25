@@ -33,6 +33,13 @@ Production polish: input validation, aesthetic presets, observability, and opera
 - Auto color-correction without human review
 - Kubernetes manifests
 
+### Candidates from phases 1–4 learnings
+
+- rembg: auto-detect bad mask / wrong output size → suggest or fallback to `u2net`
+- rembg: optional crop-to-alpha-bbox after cloth_seg
+- upscale: preflight weight file size before load
+- Document operator runbook entries for corrupt `.pth` and Docker OOM (137)
+
 ---
 
 ## Quality rules

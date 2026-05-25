@@ -6,10 +6,10 @@ Instructions for AI coding agents working in **photo-ai**.
 
 ## Before you write code
 
-1. Read [00-plan.md](./00-plan.md) — locked decisions are not negotiable unless the user explicitly changes them.
-2. Identify the **current phase** — only implement what that phase file scopes.
+1. Read [00-plan.md](./00-plan.md) — **implementation status table** + locked decisions.
+2. Identify the **current phase** — as of last doc sync: **phase 6** (phases 1–5 done).
 3. Read [.cursor/rules/core.mdc](../.cursor/rules/core.mdc) and the file-specific rule for what you're editing.
-4. Check existing code under `services/` — extend, don't duplicate.
+4. Check existing code under `services/` — extend with `runner.py` / `polish.py`; don't re-implement stage CLI.
 
 ---
 

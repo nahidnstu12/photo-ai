@@ -8,18 +8,16 @@ Local **Docker-based** product photo enhancement pipeline — raw clothing photo
 
 ## Status
 
-**Phase 4 complete** — rembg, Real-ESRGAN 2x upscale, ComfyUI service. Next: full pipeline API (Phase 5).
+| Phase | What | State |
+|-------|------|--------|
+| 1 | Docker + `/health` | ✅ |
+| 2 | rembg + white composite | ✅ CLI + `POST /api/v1/stages/rembg` |
+| 3 | Real-ESRGAN 2× | ✅ CLI |
+| 4 | ComfyUI service | ✅ manual workflow test |
+| 5 | Full pipeline `run` / `enhance` | ✅ |
+| 6–7 | Batch queue, ops | ❌ **next** |
 
-| Doc | Description |
-|-----|-------------|
-| [docs/learning/README.md](docs/learning/README.md) | **Start here if new to the stack** |
-| [docs/00-plan.md](docs/00-plan.md) | Master plan & phase index |
-| [docs/00-overview.md](docs/00-overview.md) | Project overview |
-| [docs/architecture.md](docs/architecture.md) | System design |
-| [docs/agent-guidelines.md](docs/agent-guidelines.md) | AI agent instructions |
-| [docs/phases/](docs/phases/) | Phase-by-phase implementation |
-
-Original concepts: `photo_enhancement_guide.docx`
+Details: [docs/00-plan.md](docs/00-plan.md)
 
 ---
 
@@ -27,9 +25,10 @@ Original concepts: `photo_enhancement_guide.docx`
 
 ```
 input → rembg → white composite → Real-ESRGAN 2x → SD polish (optional) → output JPG
+         └─ stage1_nobg/          └─ stage2_upscale/    └─ stage3_sd/ → output/
 ```
 
-**Catalog-safe defaults:** denoise `0.30`, upscale `2x`, rembg model `u2net_cloth_seg`.
+**Catalog-safe defaults:** denoise `0.30`, upscale `2x`, rembg `u2net_cloth_seg` (use `u2net` if cutout fails).
 
 ---
 
@@ -37,77 +36,94 @@ input → rembg → white composite → Real-ESRGAN 2x → SD polish (optional) 
 
 - Docker Desktop (Compose v2)
 - ~25 GB disk (models + cache)
-- 16 GB RAM minimum
-- **Mac M4:** Docker has no GPU — use [hybrid dev mode](docs/architecture.md#mode-b--hybrid-mac-dev-recommended-for-m4) for ComfyUI (native MPS) after Phase 4
+- 16 GB RAM minimum (upscale on large images is heavy in Docker)
+- **Mac M4:** Docker has no GPU — [hybrid dev](docs/architecture.md#mode-b--hybrid-mac-dev-recommended-for-m4) for ComfyUI
 
 ---
 
-## Quick start (Phase 1+)
+## Quick start
 
 ```bash
 cp .env.example .env
-docker compose build orchestrator
+docker compose build
 docker compose up -d
 curl -sf http://localhost:8090/health | jq .
-# → {"status":"ok","phase":1,"data_dir":"/data","data_dirs_ready":true}
 ```
-
-On startup the orchestrator ensures `data/input`, `output`, `stage1_nobg`, `stage2_upscale`, `stage3_sd`, and `models` exist under the bind-mounted `./data`.
-
-**Mac M4:** Docker has no MPS. Use [hybrid dev](docs/architecture.md#mode-b--hybrid-mac-dev-recommended-for-m4) after Phase 4 — native ComfyUI on host, orchestrator in Docker with `COMFYUI_URL=http://host.docker.internal:8188`.
-
-### Phase 2 — rembg stage
-
-```bash
-# Put a clothing photo in data/input/, then:
-docker compose exec orchestrator python -m app.cli stage rembg \
-  --input /data/input/your.jpg \
-  --output /data/stage1_nobg/your.png
-
-# Or HTTP (multipart upload):
-curl -sf -F "file=@data/input/your.jpg" http://localhost:8090/api/v1/stages/rembg | jq .
-```
-
-Models cache under `data/models/rembg/` on first run (`REMBG_MODEL`, default `u2net_cloth_seg`).
 
 ### Model downloads (you run these)
 
 ```bash
-cd photo-ai
 mkdir -p data/models/realesrgan data/models/comfyui/{checkpoints,input,output}
 
-# Real-ESRGAN ~64MB (Phase 3)
+# Real-ESRGAN ~64MB — URL must be v0.1.0 (not v0.2.2.4)
 curl -fL -o data/models/realesrgan/RealESRGAN_x4plus.pth \
   https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth
+ls -lh data/models/realesrgan/RealESRGAN_x4plus.pth   # ~64M
 
-# ComfyUI checkpoint ~2GB (Phase 4) — filename must match workflow JSON
+# ComfyUI checkpoint ~2GB
 curl -fL -o data/models/comfyui/checkpoints/realisticVision_v51.safetensors \
   'https://huggingface.co/SG161222/Realistic_Vision_V5.1_noVAE/resolve/main/realisticVisionV51_v51VAE.safetensors'
 ```
 
-`./scripts/download-models.sh` only prints the same commands (no network).
+`./scripts/download-models.sh` prints the same commands (no network).
 
-### Phase 3 — upscale
+### Manual pipeline (phases 2–3)
 
 ```bash
-docker compose build orchestrator && docker compose up -d
+cp your-photo.jpg data/input/product.jpg
+
+docker compose exec orchestrator python -m app.cli stage rembg \
+  --input /data/input/product.jpg \
+  --output /data/stage1_nobg/product.png
+# Bad cutout? Add: --model u2net
+
 docker compose exec orchestrator python -m app.cli stage upscale \
-  --input /data/stage1_nobg/sample.png \
-  --output /data/stage2_upscale/sample.png
+  --input /data/stage1_nobg/product.png \
+  --output /data/stage2_upscale/product.png
 ```
 
-### Phase 4 — ComfyUI
+### ComfyUI (phase 4, optional)
 
 ```bash
-docker compose build comfyui && docker compose up -d comfyui
-curl -sf http://localhost:8188/system_stats | head
-# Test prompt (copy image to data/models/comfyui/input/input.png first):
+docker compose up -d comfyui
+curl -sf http://localhost:8188/system_stats | jq .
+cp data/stage2_upscale/product.png data/models/comfyui/input/input.png
 ./scripts/comfyui-prompt-test.sh
 ```
 
 **Linux + NVIDIA:** `docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d`
 
-Full pipeline available after **Phase 5**.
+### Full pipeline (phase 5)
+
+```bash
+docker compose build orchestrator && docker compose up -d
+
+# No ComfyUI needed
+docker compose exec orchestrator python -m app.cli run \
+  --input /data/input/product.jpg --mode deterministic
+
+# With SD polish (comfyui up + checkpoint downloaded)
+docker compose exec orchestrator python -m app.cli run \
+  --input /data/input/product.jpg --mode full --denoise 0.30
+
+ls -la data/output/
+
+curl -X POST http://localhost:8090/api/v1/enhance \
+  -F "file=@data/input/product.jpg" \
+  -F "pipeline_mode=deterministic"
+```
+
+---
+
+## Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| rembg tall strip / broken mask | `REMBG_MODEL=u2net` or `--model u2net` |
+| upscale pickle error | Re-download `.pth` (~64MB, not 9-byte "Not Found") |
+| upscale OOM (exit 137) | More Docker RAM; expect minutes on CPU |
+| `invalid choice: upscale` | `docker compose build orchestrator && docker compose up -d` |
+| ComfyUI build fails on frontend pkg | Use current Dockerfile (ComfyUI v0.3.49) |
 
 ---
 
@@ -115,27 +131,25 @@ Full pipeline available after **Phase 5**.
 
 ```
 photo-ai/
-├── .cursor/rules/          # Cursor agent rules
-├── docs/                   # Plans & architecture
-├── services/
-│   ├── orchestrator/       # FastAPI + pipeline (Phase 1+)
-│   └── comfyui/            # ComfyUI image (Phase 4+)
-├── workflows/              # ComfyUI API JSON
-├── scripts/                # Model download helpers
-└── data/                   # I/O + models (gitignored)
+├── services/orchestrator/app/   # FastAPI + pipeline + CLI
+├── services/comfyui/            # ComfyUI v0.3.49 image
+├── workflows/polish_catalog.json
+├── scripts/
+└── data/                        # I/O + models (gitignored)
 ```
+
+---
+
+## Docs
+
+| Doc | Description |
+|-----|-------------|
+| [docs/00-plan.md](docs/00-plan.md) | Master plan + implementation table |
+| [docs/phases/](docs/phases/) | Per-phase scope & verification |
+| [docs/architecture.md](docs/architecture.md) | Docker topology (aligned to compose) |
 
 ---
 
 ## For AI agents
 
-1. Read `docs/00-plan.md`
-2. Find lowest incomplete phase in `docs/phases/`
-3. Follow `docs/agent-guidelines.md`
-4. Obey `.cursor/rules/core.mdc`
-
----
-
-## License
-
-Private / internal — adjust as needed.
+Start at [docs/00-plan.md](docs/00-plan.md) → implement **phase 05** next.

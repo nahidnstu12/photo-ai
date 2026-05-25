@@ -43,6 +43,27 @@ def run(input_path: Path, output_path: Path, *, scale: int = 2) -> None:
 
 Prefer Python package `realesrgan` over shelling to repo script unless simpler.
 
+### As implemented
+
+| Piece | Detail |
+|-------|--------|
+| Module | `app/pipeline/upscale.py` |
+| CLI | `python -m app.cli stage upscale --input … --output …` |
+| Weights | `data/models/realesrgan/RealESRGAN_x4plus.pth` |
+| Deps | `torch==2.1.2`, `torchvision==0.16.2`, `numpy<2`, `basicsr==1.4.2`, `realesrgan==0.3.0` |
+| Tiling | `tile=0` if ≤1.5M px else `tile=256` (Docker RAM) |
+| Validation | Rejects weights &lt;1MB (catches bad `Not Found` downloads) |
+
+### Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| `_pickle.UnpicklingError: could not find MARK` | Re-download weights (v0.1.0 URL); file must be ~64MB |
+| `functional_tensor` import error | Rebuild orchestrator — torchvision must be &lt;0.17 |
+| NumPy errors with torch | Rebuild — `numpy<2` pinned in image |
+| Exit 137 / OOM | Increase Docker RAM; large images use many tiles (~minutes on CPU) |
+| stage2 not 2× stage1 | Rerun upscale after fixing stage1 (stale output from old rembg) |
+
 ---
 
 ## Verification

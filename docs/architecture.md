@@ -13,22 +13,25 @@ No database in MVP — filesystem is the source of truth for job state (Phase 6 
 ### orchestrator (Python / FastAPI)
 
 - **Port:** 8090
-- **Responsibilities:**
-  - HTTP API (`/health`, `/api/v1/enhance`, `/api/v1/jobs/{id}` in Phase 6)
-  - Pipeline orchestration — calls stages in order
-  - ComfyUI HTTP client (submit workflow, poll, fetch result)
-  - CLI: `python -m app.cli run --input data/input/`
-- **Contains:** rembg, Real-ESRGAN inference code (Python/subprocess)
-- **Does not contain:** SD model weights
+- **Implemented:**
+  - `GET /health` — `phase` reflects orchestrator milestone (currently `3`)
+  - `POST /api/v1/stages/rembg` — single-stage test upload
+  - CLI: `python -m app.cli stage rembg|upscale`
+  - Pipeline modules: `remove_bg`, `composite`, `upscale`
+- **Phase 5:** `runner.py`, `polish.py`, `POST /api/v1/enhance`, `cli run`
+- **Phase 6 (not yet):** `/api/v1/jobs/{id}`
+- **Contains:** rembg, Real-ESRGAN (torch CPU in Docker)
+- **Does not contain:** SD checkpoint weights
 
 ### comfyui
 
 - **Port:** 8188
-- **Responsibilities:**
-  - Run ComfyUI server headlessly
-  - Load checkpoint from mounted volume
-  - Execute img2img workflows submitted via `/prompt`
-- **Image:** Based on official/community ComfyUI Docker pattern; custom entrypoint for `--listen 0.0.0.0 --force-fp16`
+- **Implemented:**
+  - Image from `services/comfyui/` (ComfyUI **v0.3.49**, CPU default `--cpu` on Mac)
+  - Checkpoints: `data/models/comfyui/checkpoints/`
+  - I/O: `data/models/comfyui/input/`, `output/`
+  - Workflow: `workflows/polish_catalog.json` (manual `/prompt` via `scripts/comfyui-prompt-test.sh`)
+- **Phase 5:** orchestrator HTTP client calls this service
 
 ### redis (Phase 6+)
 
@@ -64,34 +67,30 @@ No database in MVP — filesystem is the source of truth for job state (Phase 6 
 ## Docker topology
 
 ```yaml
-# Logical compose network
+# As in docker-compose.yml (simplified)
 services:
   orchestrator:
-    depends_on:
-      comfyui: { condition: service_healthy }  # when SD enabled
-    volumes:
-      - ./data:/data
-      - ./workflows:/workflows:ro
+    volumes: [./data:/data, ./workflows:/workflows:ro]
+    # depends_on comfyui — add in phase 5 when polish is wired
 
   comfyui:
     volumes:
-      - comfyui_models:/comfyui/models
+      - ./data/models/comfyui/checkpoints:/opt/ComfyUI/models/checkpoints
+      - ./data/models/comfyui/input:/opt/ComfyUI/input
+      - ./data/models/comfyui/output:/opt/ComfyUI/output
       - ./workflows:/workflows:ro
-
-volumes:
-  comfyui_models:
-  rembg_models:      # optional cache
-  realesrgan_weights:
+    environment:
+      COMFYUI_EXTRA_ARGS: --cpu   # Mac Docker; GPU: docker-compose.gpu.yml
 ```
 
 ### Volume strategy
 
-| Mount | Contents | Size (approx) |
-|-------|----------|---------------|
-| `comfyui_models` | `checkpoints/realisticVision_v51.safetensors` | ~2–4 GB |
-| `realesrgan_weights` | `RealESRGAN_x4plus.pth` | ~64 MB |
-| `rembg_models` | U2-Net / cloth seg (auto-download) | ~170 MB |
-| `./data` | I/O and stage artifacts | grows with batch |
+| Host path | Contents | Size (approx) |
+|-----------|----------|---------------|
+| `data/models/comfyui/checkpoints/` | `realisticVision_v51.safetensors` | ~2–4 GB |
+| `data/models/realesrgan/` | `RealESRGAN_x4plus.pth` | ~64 MB |
+| `data/models/rembg/` | U2-Net weights (auto-download) | ~170 MB each |
+| `data/input`, `stage*`, `output` | Pipeline I/O | grows with batch |
 
 ---
 

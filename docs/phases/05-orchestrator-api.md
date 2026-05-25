@@ -1,8 +1,26 @@
 # Phase 5 — Orchestrator API (Full Pipeline)
 
-**Status:** not started  
-**Depends on:** Phases 2, 3, 4  
+**Status:** done  
+**Depends on:** Phases 2, 3, 4 (all complete)  
 **Parallel with:** —
+
+---
+
+## Already in codebase (do not re-implement)
+
+- `app/pipeline/remove_bg.py`, `composite.py`, `upscale.py`
+- `app/cli.py` — `stage rembg`, `stage upscale`
+- `POST /api/v1/stages/rembg` only (no enhance, no upscale API)
+- `app/config.py` — `PIPELINE_MODE`, `PIPELINE_DENOISE`, `COMFYUI_URL`, etc.
+- ComfyUI service + `workflows/polish_catalog.json`
+
+## Implemented
+
+- `app/pipeline/runner.py` — chain stages, artifacts, `pipeline_mode`
+- `app/pipeline/polish.py` — ComfyUI copy-in → prompt → poll history → `stage3_sd/`
+- `POST /api/v1/enhance` — multipart + optional `pipeline_mode`, `denoise`, `seed`
+- `python -m app.cli run --input /data/input/foo.jpg [--mode full|deterministic]`
+- Final JPEG `data/output/{basename}.jpg` (quality 92)
 
 ---
 
@@ -115,12 +133,12 @@ ls -la data/output/
 
 ## Done when
 
-- [ ] Deterministic mode works with comfyui stopped
-- [ ] Full mode produces final JPG with all stage artifacts
-- [ ] denoise override works; default 0.30
-- [ ] Errors report `failed_stage` without deleting prior artifacts
-- [ ] End-to-end documented time (~1 min hybrid M4, or CPU bounds)
-- [ ] Integration test (mark `@pytest.mark.slow` if needed)
+- [x] Deterministic mode works with comfyui stopped
+- [x] Full mode produces final JPG with all stage artifacts
+- [x] denoise override works; default 0.30
+- [x] Errors report `failed_stage` without deleting prior artifacts
+- [ ] End-to-end documented time (~1 min hybrid M4, or CPU bounds) — verify on your machine
+- [x] Unit tests (`test_runner.py`, `test_polish.py`; full E2E remains manual/docker)
 
 ---
 

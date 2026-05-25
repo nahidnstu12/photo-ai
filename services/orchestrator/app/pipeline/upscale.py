@@ -7,20 +7,25 @@ from app.pipeline.errors import StageError
 
 logger = logging.getLogger(__name__)
 
-_upsampler = None
 
-
-def _get_upsampler(weights_path: Path):
-    global _upsampler
-    if _upsampler is not None:
-        return _upsampler
-
+def _validate_weights(weights_path: Path) -> None:
     if not weights_path.is_file():
         raise StageError(
             f"Real-ESRGAN weights not found: {weights_path}. "
-            "Run ./scripts/download-models.sh on the host."
+            "See README model downloads."
+        )
+    size = weights_path.stat().st_size
+    if size < 1_000_000:
+        head = weights_path.read_bytes()[:32]
+        raise StageError(
+            f"Invalid Real-ESRGAN weights ({size} bytes at {weights_path}). "
+            "Re-download: curl -fL -o data/models/realesrgan/RealESRGAN_x4plus.pth "
+            "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth "
+            f"(file starts with: {head[:20]!r})"
         )
 
+
+def _build_upsampler(weights_path: Path, tile: int) -> object:
     from basicsr.archs.rrdbnet_arch import RRDBNet
     from realesrgan import RealESRGANer
 
@@ -32,17 +37,22 @@ def _get_upsampler(weights_path: Path):
         num_grow_ch=32,
         scale=4,
     )
-    _upsampler = RealESRGANer(
+    return RealESRGANer(
         scale=4,
         model_path=str(weights_path),
         model=model,
-        tile=400,
+        tile=tile,
         tile_pad=10,
         pre_pad=0,
         half=False,
     )
-    logger.info("Real-ESRGAN loaded from %s", weights_path)
-    return _upsampler
+
+
+def _tile_for_image(h: int, w: int) -> int:
+    # 0 = no tiling; 256 = lower peak RAM for large images in Docker
+    if h * w <= 1_500_000:
+        return 0
+    return 256
 
 
 def run(
@@ -61,8 +71,11 @@ def run(
     if img is None:
         raise StageError(f"Could not read image: {input_path}")
 
-    upsampler = _get_upsampler(weights_path)
-    logger.info("upscale %s → %s (%dx)", input_path, output_path, scale)
+    _validate_weights(weights_path)
+    h, w = img.shape[:2]
+    tile = _tile_for_image(h, w)
+    logger.info("upscale %s → %s (%dx, tile=%s)", input_path, output_path, scale, tile)
+    upsampler = _build_upsampler(weights_path, tile)
     output, _ = upsampler.enhance(img, outscale=scale)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)

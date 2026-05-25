@@ -2,24 +2,33 @@
 
 Place **Export (API)** JSON files here — not UI workflow format.
 
-## Required (Phase 4)
+## `polish_catalog.json` (committed)
 
-| File | Purpose |
-|------|---------|
-| `polish_catalog.json` | img2img catalog polish — KSampler denoise 0.30 |
+img2img catalog polish — realisticVision v5.1, denoise **0.30**.
 
-## Node injection (Phase 5)
+| Node ID | class_type | Notes |
+|---------|------------|-------|
+| 1 | LoadImage | expects `input.png` in ComfyUI `input/` folder |
+| 2 | CheckpointLoaderSimple | `realisticVision_v51.safetensors` |
+| 3 | CLIPTextEncode | positive (catalog prompts) |
+| 4 | CLIPTextEncode | negative |
+| 5 | VAEEncode | img2img latent |
+| 6 | KSampler | steps 20, CFG 7, `dpmpp_2m_sde`, denoise 0.3 |
+| 7 | VAEDecode | |
+| 8 | SaveImage | prefix `photo_ai_polish` → `output/` |
 
-When the orchestrator overrides parameters, document node IDs here after export:
+Manual test: [scripts/comfyui-prompt-test.sh](../scripts/comfyui-prompt-test.sh)
+
+## Phase 5 overrides
+
+Orchestrator `polish.py` should override these node inputs:
 
 | Parameter | Node ID | Field |
 |-----------|---------|-------|
-| denoise | TBD | inputs.denoise |
-| seed | TBD | inputs.seed |
-| positive prompt | TBD | inputs.text |
-| negative prompt | TBD | inputs.text |
-| input image | TBD | inputs.image |
+| denoise | 6 | `inputs.denoise` |
+| seed | 6 | `inputs.seed` |
+| positive prompt | 3 | `inputs.text` |
+| negative prompt | 4 | `inputs.text` |
+| input image | 1 | `inputs.image` (or ComfyUI upload API) |
 
-Export from ComfyUI: **Workflow → Export (API)** (Ctrl+Shift+E).
-
-Default prompts: see [docs/glossary.md](../docs/glossary.md).
+Default prompts: [docs/glossary.md](../docs/glossary.md).

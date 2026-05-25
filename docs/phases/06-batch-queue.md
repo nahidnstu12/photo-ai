@@ -1,7 +1,7 @@
 # Phase 6 — Batch Queue
 
 **Status:** not started  
-**Depends on:** [Phase 5](./05-orchestrator-api.md)  
+**Depends on:** [Phase 5](./05-orchestrator-api.md) (**blocker** — need `runner` + `/api/v1/enhance` first)  
 **Parallel with:** —
 
 ---

@@ -83,6 +83,14 @@ class Settings(BaseSettings):
     def realesrgan_weights_path(self) -> Path:
         return self.models_dir / "realesrgan" / "RealESRGAN_x4plus.pth"
 
+    @property
+    def comfyui_input_dir(self) -> Path:
+        return self.models_dir / "comfyui" / "input"
+
+    @property
+    def comfyui_output_dir(self) -> Path:
+        return self.models_dir / "comfyui" / "output"
+
     def data_subdirs(self) -> tuple[Path, ...]:
         return (
             self.input_dir,

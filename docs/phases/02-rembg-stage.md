@@ -46,6 +46,25 @@ def run(input_path: Path, output_path: Path, *, model: str = "u2net_cloth_seg") 
 
 - Prefer `alpha_composite` for default; document `paste()` fallback for same-color garment edges in Phase 7
 
+### As implemented
+
+| Piece | Path / command |
+|-------|----------------|
+| Modules | `app/pipeline/remove_bg.py`, `composite.py` |
+| CLI | `python -m app.cli stage rembg --input … --output … [--model u2net]` |
+| API | `POST /api/v1/stages/rembg` (multipart) |
+| Model cache | `data/models/rembg/` via `U2NET_HOME` |
+| Tests | `tests/test_composite.py`, `tests/test_remove_bg.py` |
+
+### rembg model notes (from testing)
+
+| Model | When to use |
+|-------|-------------|
+| `u2net_cloth_seg` | Default; best for clear flat-lay clothing |
+| `u2net` | Fallback when cloth_seg returns wrong canvas size or fragmented mask |
+
+If output size ≠ input (e.g. 800×1000 → 800×3000) or mask is broken, rerun with `--model u2net` or `REMBG_MODEL=u2net`.
+
 ---
 
 ## Verification
