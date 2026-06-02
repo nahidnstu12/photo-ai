@@ -20,7 +20,8 @@ RUN sed -i 's/comfyui-frontend-package==1.14.5/comfyui-frontend-package==1.14.6/
 
 RUN pip install --upgrade pip \
     && pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
-    && pip install -r requirements.txt
+    && pip install -r requirements.txt \
+    && pip install requests
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
